@@ -131,6 +131,24 @@
     <!-- Importa o script do Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
+
+      // Lista de palavras ofensivas que serão censuradas
+const palavrasProibidas = [
+  "porra", "caralho", "merda", "buceta", "foda", "puta", "puto",
+  "arrombado", "corno", "viado", "desgraça", "cacete"
+];
+
+// Função que censura palavras ofensivas
+function censurar(texto) {
+  let censurado = texto;
+  palavrasProibidas.forEach(palavra => {
+    const regex = new RegExp(`\\b${palavra}\\b`, "gi");
+    // substitui a palavra por a primeira letra + ***
+    censurado = censurado.replace(regex, palavra[0] + "***");
+  });
+  return censurado;
+}
+      
       // Cria uma instância do Socket.IO
       const socket = io();
       // Seleciona o input do nome do usuário
@@ -204,3 +222,4 @@
     </script>
   </body>
 </html>
+
