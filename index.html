@@ -131,95 +131,80 @@
     <!-- Importa o script do Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-
-      // Lista de palavras ofensivas que serão censuradas
+// Lista de palavras ofensivas que serão censuradas
 const palavrasProibidas = [
   "porra", "caralho", "merda", "buceta", "foda", "puta", "puto",
   "arrombado", "corno", "viado", "desgraça", "cacete"
 ];
 
-// Função que censura palavras ofensivas
+// Função que censura palavras ofensivas substituindo pela string ##
 function censurar(texto) {
   let censurado = texto;
   palavrasProibidas.forEach(palavra => {
     const regex = new RegExp(`\\b${palavra}\\b`, "gi");
-    // substitui a palavra por a primeira letra + ***
-    censurado = censurado.replace(regex, palavra[0] + "***");
+    censurado = censurado.replace(regex, "##");
   });
   return censurado;
 }
-      
-      // Cria uma instância do Socket.IO
-      const socket = io();
-      // Seleciona o input do nome do usuário
-      const nomeInput = document.getElementById('nome');
-      // Seleciona o input da mensagem
-      const mensagemInput = document.getElementById('mensagem');
-      // Seleciona a lista de mensagens
-      const mensagens = document.getElementById('mensagens');
 
-      // Objeto que guarda a cor de cada usuário
-      const coresUsuarios = {};
+// Cria uma instância do Socket.IO
+const socket = io();
+const nomeInput = document.getElementById('nome');
+const mensagemInput = document.getElementById('mensagem');
+const mensagens = document.getElementById('mensagens');
 
-      // Função para gerar uma cor baseada no nome do usuário
-      function gerarCor(nome) {
-        let hash = 0;
-        for (let i = 0; i < nome.length; i++) {
-          hash = nome.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const cor = Math.abs(hash % 360);
-        return `hsl(${cor}, 80%, 60%)`; // cores vivas e variadas
-      }
+// Objeto que guarda a cor de cada usuário
+const coresUsuarios = {};
 
-      // Adiciona um evento de escuta para o envio do formulário
-      document.querySelector('form').addEventListener('submit', event => {
-        // Previne o envio padrão do formulário
-        event.preventDefault();
-        // Obtém o valor do input do nome do usuário
-        const nome = nomeInput.value;
-        // Obtém o valor do input da mensagem
-        const mensagem = mensagemInput.value;
-        // Verifica se ambos os campos foram preenchidos antes de enviar a mensagem
-        // Verifica se os valores são válidos (não estão em branco)
-        //trim() é um método da linguagem JavaScript que remove os espaços em branco do início e do final de uma string.
-        // emit envia um evento chamado "chat message" com um objeto contendo os valores de nome e mensagem para o servidor.
-        nome.trim() && mensagem.trim() && socket.emit('chat message', { nome, mensagem });
-        // Limpa o input da mensagem
-        mensagemInput.value = '';
-        // Desabilita o input do nome do usuário após a primeira mensagem
-        nomeInput.disabled = true; 
-      });
+function gerarCor(nome) {
+  let hash = 0;
+  for (let i = 0; i < nome.length; i++) {
+    hash = nome.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const cor = Math.abs(hash % 360);
+  return `hsl(${cor}, 80%, 60%)`;
+}
 
-      // Adiciona um evento de escuta para o evento de mensagem recebido do servidor
-      socket.on('chat message', dados => {
-        // Cria uma cor única se o usuário ainda não tiver uma
-        if (!coresUsuarios[dados.nome]) {
-          coresUsuarios[dados.nome] = gerarCor(dados.nome);
-        }
+document.querySelector('form').addEventListener('submit', event => {
+  event.preventDefault();
 
-        // Cria um elemento de lista para exibir a mensagem
-        const lista = document.createElement('li');
-        // Cria o elemento para o nome do usuário e aplica a classe
-        const nomeSpan = document.createElement('span');
-        nomeSpan.classList.add('nome-usuario');
-        nomeSpan.textContent = `${dados.nome}: `;
-        nomeSpan.style.color = coresUsuarios[dados.nome];
-        
-        // Cria o elemento para a mensagem
-        const mensagemSpan = document.createElement('span');
-        mensagemSpan.textContent = dados.mensagem;
+  const nome = nomeInput.value;
+  let mensagem = mensagemInput.value;
 
-        // Adiciona o nome e a mensagem ao item da lista
-        lista.appendChild(nomeSpan);
-        lista.appendChild(mensagemSpan);
+  // CENSURA ANTES DE ENVIAR
+  mensagem = censurar(mensagem);
 
-        // Adiciona o elemento de lista à lista de mensagens
-        mensagens.appendChild(lista);
+  nome.trim() && mensagem.trim() && socket.emit('chat message', { nome, mensagem });
 
-        // Faz o scroll automático para a última mensagem
-        mensagens.scrollTop = mensagens.scrollHeight;
-      });
+  mensagemInput.value = '';
+  nomeInput.disabled = true;
+});
+
+socket.on('chat message', dados => {
+  if (!coresUsuarios[dados.nome]) {
+    coresUsuarios[dados.nome] = gerarCor(dados.nome);
+  }
+
+  const lista = document.createElement('li');
+
+  const nomeSpan = document.createElement('span');
+  nomeSpan.classList.add('nome-usuario');
+  nomeSpan.textContent = `${dados.nome}: `;
+  nomeSpan.style.color = coresUsuarios[dados.nome];
+
+  const mensagemSpan = document.createElement('span');
+
+  // CENSURA NO RECEBIMENTO TAMBÉM
+  mensagemSpan.textContent = censurar(dados.mensagem);
+
+  lista.appendChild(nomeSpan);
+  lista.appendChild(mensagemSpan);
+  mensagens.appendChild(lista);
+
+  mensagens.scrollTop = mensagens.scrollHeight;
+});
     </script>
   </body>
 </html>
+
 
